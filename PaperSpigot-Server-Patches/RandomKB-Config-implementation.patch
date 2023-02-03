@@ -1,0 +1,630 @@
+From ec6950a0d817b7d6451b568d4a3a9fcd70d34162 Mon Sep 17 00:00:00 2001
+From: anonymous <anonymous@gmail.com>
+Date: Sun, 9 Oct 2022 00:04:36 +0200
+Subject: [PATCH] RandomKB - Implement Config
+
+
+diff --git a/src/main/java/eu/shifo/pvp/RandomKB.java b/src/main/java/eu/shifo/pvp/RandomKB.java
+new file mode 100644
+index 00000000..89264b63
+--- /dev/null
++++ b/src/main/java/eu/shifo/pvp/RandomKB.java
+@@ -0,0 +1,503 @@
++package eu.shifo.pvp;
++
++import java.io.File;
++import java.io.IOException;
++import java.io.InputStreamReader;
++import java.util.Random;
++
++import com.google.common.base.Charsets;
++
++import org.bukkit.util.NumberConversions;
++import org.bukkit.Bukkit;
++import org.bukkit.ChatColor;
++import org.bukkit.command.Command;
++import org.bukkit.command.CommandSender;
++import org.bukkit.configuration.InvalidConfigurationException;
++import org.bukkit.configuration.file.YamlConfiguration;
++import org.bukkit.craftbukkit.CraftServer;
++
++public class RandomKB extends Command {
++
++    private static double HorizontalMin;
++    private static double VerticalMin;
++    private static double AirVerticalMin;
++    private static double ExtraHorizontalMin;
++    private static double ExtraVerticalMin;
++    private static double FrictionMin;
++    private static double DistanceKBFrictionMin;
++    private static double HorizontalMax;
++    private static double VerticalMax;
++    private static double AirVerticalMax;
++    private static double ExtraHorizontalMax;
++    private static double ExtraVerticalMax;
++    private static double FrictionMax;
++    private static double DistanceKBFrictionMax;
++    private static double KnockbackReductionHorizontal;
++    private static double KnockbackReductionVertical;
++    private static double VerticalLimit;
++    private static boolean isDistanceKBEnabled;
++    private static boolean BetterSprintDetection;
++    private static boolean AirKnockback;
++    private static boolean BetterSprintStatusReset;
++    private static boolean SprintStatusReset;
++    private static boolean DeltaKnockback;
++    private static boolean UseTrigonometry;
++    private static boolean KnockbackReductionOnAllKB;
++
++    public static class Config {
++
++        private static File randomkbyml;
++        private static YamlConfiguration randomkbcfg;
++
++        public static void init(final File conf){
++            randomkbyml = conf;
++            randomkbcfg = new YamlConfiguration();
++
++            randomkbcfg.options().copyDefaults(true);
++            final YamlConfiguration randomkbtmpcfg = YamlConfiguration.loadConfiguration(new InputStreamReader(CraftServer.class.getClassLoader().getResourceAsStream("configurations/RandomKB.yml"), Charsets.UTF_8));
++            randomkbcfg.setDefaults(randomkbtmpcfg);
++
++            if(!saveDefaultConfig()){
++                try {
++                    randomkbcfg.load(randomkbyml);
++                    // checkValues(randomkbtmpcfg);
++                } catch (IOException | InvalidConfigurationException e) {
++                    Bukkit.getLogger().log(java.util.logging.Level.INFO, "Error loading RandomKB.yml", e);
++                }
++            }
++
++        }
++
++        private static boolean saveDefaultConfig(){
++            if(!randomkbyml.isFile() || randomkbyml.length() == 0){
++                save();
++                return true;
++            }
++            return false;
++        }
++
++        /* 
++        private static void checkValues(final YamlConfiguration config){
++            // going to implement it later
++        }
++        */
++
++        public static void save(){
++            try {
++                randomkbcfg.save(randomkbyml);
++            } catch (IOException e) {
++                Bukkit.getLogger().log(java.util.logging.Level.INFO, "Error saving RandomKB.yml", e);
++            }
++        }
++
++        public static void set(final String path, final Object def){
++            randomkbcfg.set(path, def);
++        }
++
++        public static boolean getBoolean(final String path){
++            return randomkbcfg.getBoolean(path);
++        }
++
++        public static double getDouble(final String path){
++            return randomkbcfg.getDouble(path);
++        }
++
++    }
++
++    public RandomKB(final String name) {
++        super(name);
++
++        HorizontalMin = Config.getDouble("knockback-horizontal.HorizontalMin");
++        VerticalMin = Config.getDouble("knockback-vertical.VerticalMin");
++        ExtraHorizontalMin = Config.getDouble("knockback-horizontal.ExtraHorizontalMin");
++        ExtraVerticalMin = Config.getDouble("knockback-vertical.ExtraVerticalMin");
++        FrictionMin = Config.getDouble("other.FrictionMin");
++        DistanceKBFrictionMin = Config.getDouble("knockback-vertical.DistanceKBFrictionMin");
++        HorizontalMax = Config.getDouble("knockback-horizontal.HorizontalMax");
++        VerticalMax = Config.getDouble("knockback-vertical.VerticalMax");
++        ExtraHorizontalMax = Config.getDouble("knockback-horizontal.ExtraHorizontalMax");
++        ExtraVerticalMax = Config.getDouble("knockback-vertical.ExtraVerticalMax");
++        FrictionMax = Config.getDouble("other.FrictionMax");
++        DistanceKBFrictionMax = Config.getDouble("knockback-vertical.DistanceKBFrictionMax");
++        KnockbackReductionHorizontal = Config.getDouble("knockback-horizontal.KnockbackReduction");
++        KnockbackReductionVertical = Config.getDouble("knockback-vertical.KnockbackReduction");
++        VerticalLimit = Config.getDouble("knockback-vertical.VerticalLimit");
++        AirVerticalMin = Config.getDouble("knockback-vertical.AirVerticalMin");
++        AirVerticalMax = Config.getDouble("knockback-vertical.AirVerticalMax");
++        isDistanceKBEnabled = Config.getBoolean("knockback-vertical.EnableDistanceKB");
++        BetterSprintDetection = Config.getBoolean("other.BetterSprint");
++        AirKnockback = Config.getBoolean("knockback-vertical.AirKnockback");
++        BetterSprintStatusReset = Config.getBoolean("other.BetterSprintStatusReset");
++        SprintStatusReset = Config.getBoolean("other.SprintStatusReset");
++        DeltaKnockback = Config.getBoolean("other.DeltaKnockback");
++        UseTrigonometry = Config.getBoolean("other.UseTrigonometryOnAllKB");
++        KnockbackReductionOnAllKB = Config.getBoolean("other.BetterSprintReductionOnAllKB");
++
++        this.usageMessage = ChatColor.BLUE + "[RandomKB] " + ChatColor.YELLOW + "Available commands: \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb sethorkb \n" 
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb setverkb \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb setfrictionkb \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb setdistkbfriction \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb distancekb \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb airknockback \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb bettersprint \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb bettersprintreductiononallkb \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb bettersprintstatusreset \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb usetrigonometryonallkb \n"
++        + ChatColor.BLUE + "/" + ChatColor.YELLOW + "randomkb deltaknockback";
++        this.description = "RandomKB config command";
++        this.setPermission("eu.shifo.pvp.RandomKB");
++
++    }
++
++    @Override
++    public boolean execute(CommandSender sender, String commandLabel, String[] args) {   
++        if(this.testPermission(sender)){
++
++            final String str = ChatColor.BLUE + "[RandomKB] " + ChatColor.YELLOW;
++            final String[] s = { 
++                "enabled", "disabled"
++            };
++
++            if(args.length == 0){ 
++                sender.sendMessage(usageMessage);
++                return true;
++            }      
++
++            switch(args[0]){
++                case "sethorkb":
++                    if(args.length > 6 || args.length < 6){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb sethorkb <MinHor> <MaxHor> <ExtraHorMin> <ExtraHorMax> <KnockbackReduction>");
++                        return true;
++                    } else {
++                        HorizontalMin = NumberConversions.toDouble(args[1]);
++                        HorizontalMax = NumberConversions.toDouble(args[2]);
++                        ExtraHorizontalMin = NumberConversions.toDouble(args[3]);
++                        ExtraHorizontalMax = NumberConversions.toDouble(args[4]);
++                        KnockbackReductionHorizontal = NumberConversions.toDouble(args[5]);
++        
++                        Config.set("knockback-horizontal.HorizontalMin", HorizontalMin);
++                        Config.set("knockback-horizontal.HorizontalMax", HorizontalMax);
++                        Config.set("knockback-horizontal.ExtraHorizontalMin", ExtraHorizontalMin);
++                        Config.set("knockback-horizontal.ExtraHorizontalMax", ExtraHorizontalMax);
++                        Config.set("knockback-horizontal.KnockbackReduction", KnockbackReductionHorizontal);
++                        Config.save();
++
++                        sender.sendMessage(str + "Succesfuly updated horizontal knockback values.");
++                    }
++                    break;
++
++                case "setverkb":
++                    final boolean flag = AirKnockback ? (args.length > 9 || args.length < 9) : (args.length > 7 || args.length < 7);
++                    if(flag) {
++                        if(!AirKnockback)
++                            sender.sendMessage(str + "Invalid usage, check syntax: /randomkb setverkb <MinVer> <MaxVer> <ExtraVerMin> <ExtraVerMax> <KnockbackReduction> <VerticalLimit>");
++                        else 
++                            sender.sendMessage(str + "Invalid usage, check syntax: /randomkb setverkb <MinVer> <MaxVer> <ExtraVerMin> <ExtraVerMax> <KnockbackReduction> <VerticalLimit> <MinAirVer> <MaxAirVer>");
++                        
++                        // I didn't want to make a boilerplate code, so I made air knockback be configurable at the end of the args
++                        return true;
++                    } else {
++                        VerticalMin = NumberConversions.toDouble(args[1]);
++                        VerticalMax = NumberConversions.toDouble(args[2]);
++                        ExtraVerticalMin = NumberConversions.toDouble(args[3]);
++                        ExtraVerticalMax = NumberConversions.toDouble(args[4]);
++                        KnockbackReductionVertical = NumberConversions.toDouble(args[5]);
++                        VerticalLimit = NumberConversions.toDouble(args[6]);
++                        if(AirKnockback){
++                            AirVerticalMin = NumberConversions.toDouble(args[7]);
++                            AirVerticalMax = NumberConversions.toDouble(args[8]);
++                            Config.set("knockback-vertical.AirVerticalMin", AirVerticalMin);
++                            Config.set("knockback-vertical.AirVerticalMax", AirVerticalMax);
++                        }
++        
++                        Config.set("knockback-vertical.VerticalMin", VerticalMin);
++                        Config.set("knockback-vertical.VerticalMax", VerticalMax);
++                        Config.set("knockback-vertical.ExtraVerticalMin", ExtraVerticalMin);
++                        Config.set("knockback-vertical.ExtraVerticalMax", ExtraVerticalMax);
++                        Config.set("knockback-vertical.KnockbackReduction", KnockbackReductionVertical);
++                        Config.set("knockback-vertical.VerticalLimit", VerticalLimit);
++                        Config.save();
++
++                        sender.sendMessage(str + "Succesfuly updated vertical knockback values.");
++                    }
++                    break;
++
++                case "setfrictionkb":
++                    if(args.length > 3 || args.length < 3){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb setfrictionkb <FrictionMin> <FrictionMax>");
++                        return true;
++                    } else {
++                        FrictionMin = NumberConversions.toDouble(args[1]);
++                        FrictionMax = NumberConversions.toDouble(args[2]);
++        
++                        Config.set("other.FrictionMin", FrictionMin);
++                        Config.set("other.FrictionMax", FrictionMax);
++                        Config.save();
++
++                        sender.sendMessage(str + "Succesfuly updated friction knockback values.");
++                    }
++                    break;
++
++                case "setdistkbfriction":
++                    if(args.length > 3 || args.length < 3){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb setdistkbfriction <DistKBFrictionMin> <DistKBFrictionMax>");
++                        return true;
++                    } else if(isDistanceKBEnabled){
++                        DistanceKBFrictionMin = NumberConversions.toDouble(args[1]);
++                        DistanceKBFrictionMax = NumberConversions.toDouble(args[2]);
++        
++                        Config.set("knockback-vertical.DistanceKBFrictionMin", DistanceKBFrictionMin);
++                        Config.set("knockback-vertical.DistanceKBFrictionMax", DistanceKBFrictionMax);
++                        Config.save();
++
++                        sender.sendMessage(str + "Succesfuly updated distancekb friction values.");
++                    } else {
++                        sender.sendMessage(str + "DistanceKB is disabled, enable it with '/randomkb distancekb <enable or disable>' ");
++                        return true;
++                    }
++                    break;
++
++                case "distancekb":
++                    if(args.length > 2 || args.length < 2){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb distancekb <enable or disable>");
++                        return true;
++                    } else {
++                        if(args[1].equalsIgnoreCase("enable")) isDistanceKBEnabled = true;
++                        else if(args[1].equalsIgnoreCase("disable")) isDistanceKBEnabled = false;
++                        else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb distancekb <enable or disable>"); return true; }
++
++                        Config.set("knockback-vertical.EnableDistanceKB", isDistanceKBEnabled);
++                        Config.save();
++
++                        final byte b = (byte) (isDistanceKBEnabled ? 0 : 1);
++
++                        sender.sendMessage(str + "DistanceKB has been " + s[b]);
++                    }
++                    break;
++                
++                case "bettersprint":
++                    if(args.length > 2 || args.length < 2){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb bettersprint <enable or disable>");
++                        return true;
++                    } else {
++                        if(args[1].equalsIgnoreCase("enable")) BetterSprintDetection = true;
++                        else if(args[1].equalsIgnoreCase("disable")) BetterSprintDetection = false;
++                        else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb bettersprint <enable or disable>"); return true; }
++
++                        Config.set("other.BetterSprint", BetterSprintDetection);
++                        Config.save();
++
++                        final byte b = (byte) (BetterSprintDetection ? 0 : 1);
++
++                        sender.sendMessage(str + "Better sprint detection has been " + s[b]);
++                    }
++                    break;      
++
++                case "airknockback":
++                    if(args.length > 2 || args.length < 2){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb airknockback <enable or disable>");
++                        return true;
++                    } else {
++                        if(args[1].equalsIgnoreCase("enable")) AirKnockback = true;
++                        else if(args[1].equalsIgnoreCase("disable")) AirKnockback = false;
++                        else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb airknockback <enable or disable>"); return true; }
++
++                        Config.set("knockback-vertical.AirKnockback", AirKnockback);
++                        Config.save();
++
++                        final byte b = (byte) (AirKnockback ? 0 : 1);
++
++                        sender.sendMessage(str + "Air knockback has been " + s[b]);
++                    }
++                    break;
++                
++                case "sprintstatusreset":
++                    if(args.length > 2 || args.length < 2){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb sprintstatusreset <enable or disable>");
++                        return true;
++                    } else {
++                        if(args[1].equalsIgnoreCase("enable")) SprintStatusReset = true;
++                        else if(args[1].equalsIgnoreCase("disable")) SprintStatusReset = false;
++                        else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb sprintstatusreset <enable or disable>"); return true; }
++
++                        Config.set("other.SprintStatusReset", SprintStatusReset);
++                        Config.save();
++
++                        final byte b = (byte) (SprintStatusReset ? 0 : 1);
++
++                        sender.sendMessage(str + "Sprint Status Reset has been " + s[b]);
++                    }
++                    break;
++                
++                case "deltaknockback":
++                    if(args.length > 2 || args.length < 2){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb deltaknockback <enable or disable>");
++                        return true;
++                    } else {
++                        if(args[1].equalsIgnoreCase("enable")) DeltaKnockback = true;
++                        else if(args[1].equalsIgnoreCase("disable")) DeltaKnockback = false;
++                        else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb deltaknockback <enable or disable>"); return true; }
++
++                        Config.set("other.DeltaKnockback", DeltaKnockback);
++                        Config.save();
++
++                        final byte b = (byte) (DeltaKnockback ? 0 : 1);
++
++                        sender.sendMessage(str + "Delta knockback has been " + s[b]);
++                    }
++                    break;
++
++                case "bettersprintreductiononallkb":
++                    if(BetterSprintDetection){
++                        if(args.length > 2 || args.length < 2){
++                            sender.sendMessage(str + "Invalid usage, check syntax: /randomkb bettersprintreductiononallkb <enable or disable>");
++                            return true;
++                        } else {
++                            if(args[1].equalsIgnoreCase("enable")) KnockbackReductionOnAllKB = true;
++                            else if(args[1].equalsIgnoreCase("disable")) KnockbackReductionOnAllKB = false;
++                            else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb bettersprintreductiononallkb <enable or disable>"); return true; }
++
++                            Config.set("other.BetterSprintReductionOnAllKB", KnockbackReductionOnAllKB);
++                            Config.save();
++
++                            final byte b = (byte) (KnockbackReductionOnAllKB ? 0 : 1);
++
++                            sender.sendMessage(str + "Better sprint Knockback reduction on all knockback has been " + s[b]);
++                        }
++                    } else {
++                        sender.sendMessage(str + "You have Better Sprint disabled.");
++                        return true;
++                    }
++                    break;
++
++                case "usetrigonometryonallkb":
++                    if(args.length > 2 || args.length < 2){
++                        sender.sendMessage(str + "Invalid usage, check syntax: /randomkb usetrigonometryonallkb <enable or disable>");
++                        return true;
++                    } else {
++                        if(args[1].equalsIgnoreCase("enable")) UseTrigonometry = true;
++                        else if(args[1].equalsIgnoreCase("disable")) UseTrigonometry = false;
++                        else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb usetrigonometryonallkb <enable or disable>"); return true; }
++
++                        Config.set("other.UseTrigonometryOnAllKB", UseTrigonometry);
++                        Config.save();
++
++                        final byte b = (byte) (UseTrigonometry ? 0 : 1);
++
++                        sender.sendMessage(str + "Trigonometry on all knockback has been " + s[b]);
++                    }
++                    break;
++
++                case "bettersprintstatusreset":
++                    if(BetterSprintDetection){
++                        if(args.length > 2 || args.length < 2){
++                            sender.sendMessage(str + "Invalid usage, check syntax: /randomkb bettersprintstatusreset <enable or disable>");
++                            return true;
++                        } else {
++                            if(args[1].equalsIgnoreCase("enable")) BetterSprintStatusReset = true;
++                            else if(args[1].equalsIgnoreCase("disable")) BetterSprintStatusReset = false;
++                            else { sender.sendMessage(str + "Invalid usage, check syntax: /randomkb bettersprintstatusreset <enable or disable>"); return true; }
++    
++                            Config.set("other.BetterSprintStatusReset", BetterSprintStatusReset);
++                            Config.save();
++    
++                            final byte b = (byte) (BetterSprintStatusReset ? 0 : 1);
++    
++                            sender.sendMessage(str + "Better Sprint Status Reset has been " + s[b]);
++                        }
++                    } else {
++                        sender.sendMessage(str + "You have Better Sprint disabled.");
++                        return true;
++                    }
++                    break;
++
++                default:
++                    sender.sendMessage(usageMessage);
++                    break;
++
++            }
++        } else {
++            return true;
++        }
++        
++        return true;
++    }
++    
++    private final static double randomization(double d0, double d1){
++        Random rand = new Random();
++        return d0 >= d1 ? d0 : rand.nextDouble() * (d1 - d0) + d0;
++    }
++
++    public static double getHorizontal(){
++        return randomization(HorizontalMin, HorizontalMax);
++    }
++
++    public static double getVertical(){
++        return randomization(VerticalMin, VerticalMax);
++    }
++
++    public static double getExtraHorizontal(){
++        return randomization(ExtraHorizontalMin, ExtraHorizontalMax);
++    }
++
++    public static double getExtraVertical(){
++        return randomization(ExtraVerticalMin, ExtraVerticalMax);
++    }
++
++    public static double getFriction(){
++        return randomization(FrictionMin, FrictionMax);
++    }
++
++    public static double getDistanceKBFriction(){
++        return randomization(DistanceKBFrictionMin, DistanceKBFrictionMax);
++    }
++
++    public static double getVerticalLimit(){
++        return VerticalLimit;
++    }
++
++    public static double getKnockbackReductionHor(){
++        return KnockbackReductionHorizontal;
++    }
++
++    public static double getKnockbackReductionVer(){
++        return KnockbackReductionVertical;
++    }
++
++    public static boolean DistanceKBEnabled(){
++        return isDistanceKBEnabled;
++    }
++
++    public static boolean BetterSprintDetectionEnabled(){
++        return BetterSprintDetection;
++    }
++
++    public static double getAirVertical(){
++        return randomization(AirVerticalMin, AirVerticalMax);
++    }
++
++    public static boolean airKnockback(){
++        return AirKnockback;
++    }
++
++    public static boolean BetterSprintStatusReset(){
++        return BetterSprintStatusReset;
++    }
++
++    public static boolean SprintStatusReset(){
++        return SprintStatusReset;
++    }
++
++    public static boolean DeltaKnockback(){
++        return DeltaKnockback;
++    }
++
++    public static boolean UseTrigonometry(){
++        return UseTrigonometry;
++    }
++
++    public static boolean KnockbackReductionOnAllKB(){
++        return KnockbackReductionOnAllKB;
++    }
++}
+diff --git a/src/main/java/net/minecraft/server/DedicatedServer.java b/src/main/java/net/minecraft/server/DedicatedServer.java
+index c30867d3..beb922c4 100644
+--- a/src/main/java/net/minecraft/server/DedicatedServer.java
++++ b/src/main/java/net/minecraft/server/DedicatedServer.java
+@@ -1,6 +1,9 @@
+ package net.minecraft.server;
+ 
+ import com.google.common.collect.Lists;
++
++import eu.shifo.pvp.RandomKB;
++
+ import java.io.BufferedReader;
+ import java.io.File;
+ import java.io.IOException;
+@@ -178,6 +181,11 @@ public class DedicatedServer extends MinecraftServer implements IMinecraftServer
+             org.spigotmc.SpigotConfig.registerCommands();
+             // Spigot end
+ 
++            // RandomKB
++            RandomKB.Config.init((File) options.valueOf("randomkb-settings"));
++            MinecraftServer.getServer().server.getCommandMap().register("randomkb", new RandomKB("randomkb"));
++            //RandomKB
++
+             DedicatedServer.LOGGER.info("Generating keypair");
+             this.a(MinecraftEncryption.b());
+             DedicatedServer.LOGGER.info("Starting Minecraft server on " + (this.getServerIp().length() == 0 ? "*" : this.getServerIp()) + ":" + this.R());
+diff --git a/src/main/java/org/bukkit/craftbukkit/CraftServer.java b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+index 27594258..46bc9e37 100644
+--- a/src/main/java/org/bukkit/craftbukkit/CraftServer.java
++++ b/src/main/java/org/bukkit/craftbukkit/CraftServer.java
+@@ -117,6 +117,7 @@ import com.google.common.collect.Lists;
+ import com.google.common.collect.MapMaker;
+ import com.mojang.authlib.GameProfile;
+ 
++import eu.shifo.pvp.RandomKB;
+ import io.netty.buffer.ByteBuf;
+ import io.netty.buffer.ByteBufOutputStream;
+ import io.netty.buffer.Unpooled;
+@@ -688,6 +689,9 @@ public final class CraftServer implements Server {
+         }
+ 
+         org.spigotmc.SpigotConfig.init((File) console.options.valueOf("spigot-settings")); // Spigot
++        // RandomKB
++        RandomKB.Config.init((File) console.options.valueOf("randomkb-settings"));
++        // RandomKB
+         for (WorldServer world : console.worlds) {
+             world.worldData.setDifficulty(difficulty);
+             world.setSpawnFlags(monsters, animals);
+@@ -709,6 +713,9 @@ public final class CraftServer implements Server {
+         commandMap.clearCommands();
+         resetRecipes();
+         org.spigotmc.SpigotConfig.registerCommands(); // Spigot
++        // RandomKB
++        MinecraftServer.getServer().server.getCommandMap().register("randomkb", new RandomKB("randomkb"));
++        // RandomKB
+ 
+         overrideAllCommandBlockCommands = commandsConfiguration.getStringList("command-block-overrides").contains("*");
+ 
+diff --git a/src/main/java/org/bukkit/craftbukkit/Main.java b/src/main/java/org/bukkit/craftbukkit/Main.java
+index 337aa29b..cccd034b 100644
+--- a/src/main/java/org/bukkit/craftbukkit/Main.java
++++ b/src/main/java/org/bukkit/craftbukkit/Main.java
+@@ -114,6 +114,12 @@ public class Main {
+                 acceptsAll(asList("v", "version"), "Show the CraftBukkit Version");
+ 
+                 acceptsAll(asList("demo"), "Demo mode");
++                
++                acceptsAll(asList("R", "randomkb-settings"), "RandomKB config")
++                    .withRequiredArg()
++                    .ofType(File.class)
++                    .defaultsTo(new File("RandomKB.yml"))
++                    .describedAs("Yml file");
+ 
+                 // Spigot Start
+                 acceptsAll(asList("S", "spigot-settings"), "File for spigot settings")
+diff --git a/src/main/resources/configurations/RandomKB.yml b/src/main/resources/configurations/RandomKB.yml
+new file mode 100644
+index 00000000..2436c5e7
+--- /dev/null
++++ b/src/main/resources/configurations/RandomKB.yml
+@@ -0,0 +1,30 @@
++knockback-horizontal:
++  HorizontalMin: 0.39
++  HorizontalMax: 0.41
++  ExtraHorizontalMin: 0.48
++  ExtraHorizontalMax: 0.52
++  KnockbackReduction: 0.6
++  
++knockback-vertical:
++  VerticalMin: 0.39
++  VerticalMax: 0.41
++  AirVerticalMin: 0.0
++  AirVerticalMax: 0.0
++  ExtraVerticalMin: 0.095
++  ExtraVerticalMax: 0.105
++  KnockbackReduction: 1.0
++  VerticalLimit: 0.4
++  DistanceKBFrictionMin: 3.5
++  DistanceKBFrictionMax: 4.0
++  AirKnockback: false
++  EnableDistanceKB: false
++
++other:
++  FrictionMin: 1.9
++  FrictionMax: 2.1
++  BetterSprint: false
++  BetterSprintStatusReset: true
++  SprintStatusReset: true
++  DeltaKnockback: false
++  UseTrigonometryOnAllKB: false
++  BetterSprintReductionOnAllKB: false
+\ No newline at end of file
+-- 
+2.36.1.windows.1
+
