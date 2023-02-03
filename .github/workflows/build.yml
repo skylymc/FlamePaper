@@ -45,6 +45,8 @@ jobs:
       run: |
         git config --global user.email "you@example.com"
         git config --global user.name "Your Name"
+        git am --continue
+        git am --skip
         ./build.sh
     # An artifact is generated in a compressed file according to each JDK build version.
     - name: Upload FlamePaper Server
