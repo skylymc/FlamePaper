@@ -4,7 +4,9 @@
 # if the change is working properly.
 name: FlamePaper Build (master)
 
-on: [push]
+on:
+ push:
+ workflow_dispatch:
 
 jobs:
   build:
