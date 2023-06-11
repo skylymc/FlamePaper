@@ -1,0 +1,46 @@
+From 4950b7540447b550017719d620d55a6caa42e0f5 Mon Sep 17 00:00:00 2001
+From: HiKingsFR <hikingsfr@gmail.com>
+Date: Sat, 10 Jun 2023 16:54:55 +0000
+Subject: [PATCH] Make-player-data-saving-configurable
+
+
+diff --git a/src/main/java/net/minecraft/server/WorldNBTStorage.java b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+index b4056a28a..486ea5daf 100644
+--- a/src/main/java/net/minecraft/server/WorldNBTStorage.java
++++ b/src/main/java/net/minecraft/server/WorldNBTStorage.java
+@@ -15,6 +15,7 @@ import org.apache.logging.log4j.Logger;
+ import java.util.UUID;
+ 
+ import org.bukkit.craftbukkit.entity.CraftPlayer;
++import org.github.paperspigot.PaperSpigotConfig;
+ import org.github.paperspigot.exception.ServerInternalException;
+ // CraftBukkit end
+ 
+@@ -181,6 +182,7 @@ public class WorldNBTStorage implements IDataManager, IPlayerFileData {
+     }
+ 
+     public void save(EntityHuman entityhuman) {
++    	if(!PaperSpigotConfig.savePlayerData) return; // FlamePaper - Make player data saving configurable
+         try {
+             NBTTagCompound nbttagcompound = new NBTTagCompound();
+ 
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index 4a6a6f9e1..146086949 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -159,6 +159,12 @@ public class PaperSpigotConfig
+         }
+     }
+ 
++    public static boolean savePlayerData = true;
++    private static void savePlayerData()
++    {
++        savePlayerData = getBoolean("settings.save-player-data", savePlayerData);
++    }
++
+     public static double strengthEffectModifier;
+     public static double weaknessEffectModifier;
+     private static void effectModifiers()
+-- 
+2.30.2
+

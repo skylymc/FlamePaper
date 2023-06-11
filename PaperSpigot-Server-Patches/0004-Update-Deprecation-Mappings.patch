@@ -1,4 +1,4 @@
-From 248f3259af4e996ba2088fcde5a97343daf75784 Mon Sep 17 00:00:00 2001
+From 0bb7ec526e4a11db974d9107ffa45ca93a7f0128 Mon Sep 17 00:00:00 2001
 From: LinsaFTW <25271111+linsaftw@users.noreply.github.com>
 Date: Fri, 13 Jan 2023 17:25:26 -0300
 Subject: [PATCH] Update Deprecation Mappings
@@ -39,10 +39,10 @@ index 48bc50495..eafeaf211 100644
 +org/bukkit/event/vehicle/VehicleDamageEvent _INVALID_setDamage (I)V setDamage
 \ No newline at end of file
 diff --git a/pom.xml b/pom.xml
-index f42979759..3c8414d69 100644
+index 232cfcfe0..acd2e3e6a 100644
 --- a/pom.xml
 +++ b/pom.xml
-@@ -236,7 +236,7 @@
+@@ -241,7 +241,7 @@
              <plugin>
                  <groupId>net.md-5</groupId>
                  <artifactId>specialsource-maven-plugin</artifactId>
@@ -51,7 +51,7 @@ index f42979759..3c8414d69 100644
                  <executions>
                      <execution>
                          <phase>package</phase>
-@@ -245,7 +245,6 @@
+@@ -250,7 +250,6 @@
                          </goals>
                          <configuration>
                              <srgIn>${project.basedir}/deprecation-mappings.csrg</srgIn>

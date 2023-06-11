@@ -1,11 +1,11 @@
-From 02f0331a7ee9c080438f75f440c5d44c262b933e Mon Sep 17 00:00:00 2001
+From c5f5d9a24aebff8274aeefdaed8e034453e52391 Mon Sep 17 00:00:00 2001
 From: LinsaFTW <25271111+linsaftw@users.noreply.github.com>
 Date: Sun, 13 Mar 2022 22:22:09 -0300
 Subject: [PATCH] Update Version Command
 
 
 diff --git a/src/main/java/org/bukkit/command/defaults/VersionCommand.java b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
-index bd3138c00..32619b96e 100644
+index bd3138c00..cc6b676c1 100644
 --- a/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 +++ b/src/main/java/org/bukkit/command/defaults/VersionCommand.java
 @@ -40,43 +40,49 @@ public class VersionCommand extends BukkitCommand {
@@ -20,7 +20,7 @@ index bd3138c00..32619b96e 100644
 -            sendVersion(sender);
 -        } else {
 -            StringBuilder name = new StringBuilder();
-+            String version = "1.0.2";
++            String version = "1.0.4";
  
 -            for (String arg : args) {
 -                if (name.length() > 0) {

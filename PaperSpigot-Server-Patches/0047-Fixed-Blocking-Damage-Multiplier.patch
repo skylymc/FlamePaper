@@ -1,0 +1,37 @@
+From f5e1381ded44e927fc928f7d46dd57d3986170e0 Mon Sep 17 00:00:00 2001
+From: LinsaFTW <25271111+linsaftw@users.noreply.github.com>
+Date: Sun, 9 Apr 2023 22:16:50 -0300
+Subject: [PATCH] Fixed Blocking Damage Multiplier
+
+
+diff --git a/src/main/java/net/minecraft/server/EntityLiving.java b/src/main/java/net/minecraft/server/EntityLiving.java
+index 04a16e5be..1eaa79d5c 100644
+--- a/src/main/java/net/minecraft/server/EntityLiving.java
++++ b/src/main/java/net/minecraft/server/EntityLiving.java
+@@ -1065,7 +1065,8 @@ public abstract class EntityLiving extends Entity {
+                 public Double apply(Double f) {
+                     if (human) {
+                         if (!damagesource.ignoresArmor() && ((EntityHuman) EntityLiving.this).isBlocking() && f > 0.0F) {
+-                            return -(f - ((1.0F + f) * 0.5F));
++                            // FlamePaper - Fixed Blocking Damage Multiplier
++                            return -(f - ((world.paperSpigotConfig.playerBlockingDamageMultiplier + f) * 0.5F));
+                         }
+                     }
+                     return -0.0;
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+index 16e41d531..6f395e1f4 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotWorldConfig.java
+@@ -94,7 +94,8 @@ public class PaperSpigotWorldConfig
+     public float playerBlockingDamageMultiplier;
+     private void playerBlockingDamageMultiplier()
+     {
+-        playerBlockingDamageMultiplier = getFloat( "player-blocking-damage-multiplier", 0.5F );
++        // FlamePaper - Fixed Blocking Damage Multiplier
++        playerBlockingDamageMultiplier = getFloat( "player-blocking-damage-multiplier", 1.0F );
+         log( "Player blocking damage multiplier set to " + playerBlockingDamageMultiplier );
+     }
+ 
+-- 
+2.37.3.windows.1
+

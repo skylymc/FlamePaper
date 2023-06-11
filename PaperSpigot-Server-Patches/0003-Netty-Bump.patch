@@ -1,11 +1,11 @@
-From 55f2447475cdec18a8caa4911df0823ad1013cfa Mon Sep 17 00:00:00 2001
+From 805477ce766606b8157b6e7c689c356fd11031cd Mon Sep 17 00:00:00 2001
 From: LinsaFTW <25271111+linsaftw@users.noreply.github.com>
 Date: Thu, 27 Oct 2022 12:35:48 +0200
 Subject: [PATCH] Netty Bump
 
 
 diff --git a/pom.xml b/pom.xml
-index 421dd106e..f42979759 100644
+index 19a477014..232cfcfe0 100644
 --- a/pom.xml
 +++ b/pom.xml
 @@ -41,6 +41,11 @@
@@ -18,9 +18,9 @@ index 421dd106e..f42979759 100644
 +            <version>4.1.84.Final</version>
 +        </dependency>  
          <dependency>
-             <groupId>org.apache.logging.log4j</groupId>
-             <artifactId>log4j-core</artifactId>
-@@ -189,6 +194,7 @@
+             <groupId>com.google.code.gson</groupId>
+             <artifactId>gson</artifactId>
+@@ -194,6 +199,7 @@
                                      <artifact>org.spigotmc:minecraft-server:**</artifact>
                                      <excludes>
                                          <exclude>org/apache/logging/log4j/**</exclude>

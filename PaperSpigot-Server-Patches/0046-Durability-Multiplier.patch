@@ -1,0 +1,39 @@
+From fe1a78824a99d832cd980c0bb1a5365fc14bc056 Mon Sep 17 00:00:00 2001
+From: LinsaFTW <25271111+linsaftw@users.noreply.github.com>
+Date: Sun, 9 Apr 2023 22:10:19 -0300
+Subject: [PATCH] Durability Multiplier
+
+
+diff --git a/src/main/java/net/minecraft/server/ItemStack.java b/src/main/java/net/minecraft/server/ItemStack.java
+index 93c453d2d..ec82f0a2b 100644
+--- a/src/main/java/net/minecraft/server/ItemStack.java
++++ b/src/main/java/net/minecraft/server/ItemStack.java
+@@ -403,7 +403,8 @@ public final class ItemStack {
+                 }
+             }
+ 
+-            this.damage += i;
++            // FlamePaper - Durability Multiplier
++            this.damage += (int) (PaperSpigotConfig.durabilityMultiplier * i);
+             return this.damage > this.j();
+         }
+     }
+diff --git a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+index cedb69357..4a6a6f9e1 100644
+--- a/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
++++ b/src/main/java/org/github/paperspigot/PaperSpigotConfig.java
+@@ -274,4 +274,11 @@ public class PaperSpigotConfig
+     {
+         stackableMilkBuckets = getBoolean( "stackable-buckets.milk", true );
+     }
++
++    // FlamePaper - Durability Multiplier
++    public static float durabilityMultiplier;
++    private static void durabilityMultiplier()
++    {
++        durabilityMultiplier = getFloat( "durability-multiplier", 1.0F );
++    }
+ }
+-- 
+2.37.3.windows.1
+
